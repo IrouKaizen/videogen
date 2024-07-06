@@ -89,4 +89,80 @@ Un module pour créer des threads, ce qui permet à votre programme d'exécuter 
 Fournit des fonctions pour lire et écrire des fichiers de configuration au format INI (initialisation). Ces fichiers stockent les paramètres et les options de votre programme.
     """
 
+# Load configuration from a config file
+config = configparser.ConfigParser() #L'objet config créé par cette ligne sera utilisé pour stocker les données du fichier de configuration.
+config.read('config.ini') #Cette ligne lit le contenu du fichier de configuration config.ini et l'enregistre dans l'objet config.
+
+# Getting configurations from config
+
+#ça charge des paramètres depuis un fichier de configuration et les stockent dans des variables
+
+max_filename_length = int(config['General']['max_filename_length']) # clé du paramètre spécifique que l'on veut récupérer.
+logs_dir = config['General']['logs_dir'] # récupère la valeur de la clé l'enregistre
+general_log = config['General']['general_log']
+google_api_key = config['API']['google_custom_search_api_key'] #recherche
+search_engine_id = config['API']['search_engine_id'] #cible le moteur
+
+
+# Get the search query from the user
+query = input("Enter search query: ") #recherhce
+
+# Truncate the query to the maximum filename length
+filename = query[:min(len(query), max_filename_length)] #s'assure que le nom de fichier ne dépasse pas une limite de longueur maximale pour les noms de fichiers
+
+# Replacing all non-alphanumeric characters with a hyphen using regular expression
+filename = re.sub('[^0-9a-zA-Z.-]+', '-', filename) #remplace toutes les occurrences de ces caractères non alphanumériques par un
+#tiret (-) dans la variable filename. Cela garantit que le nom de fichier est compatible avec la plupart des systèmes d'exploitation.
+
+#Ce code définit la structure des répertoires pour le processus de génération vidéo.
+#settingfilepaths
+output_dir = "output" #les fichiers générés seront placés ici
+image_dir = os.path.join(output_dir,filename) #construit le chemin d'accès au répertoire qui stockera les images utilisées dans la vidéo
+audio_dir = os.path.join(output_dir,'audio')
+video_dir = os.path.join(output_dir,'video')
+subtitle_dir = os.path.join(output_dir,'subtitle')
+# keeping the logs file seperate
+llm_log = os.path.join(logs_dir,'results.txt') #fonctionnement sur n'importe quel OS
+
+#create directories function
+def create_dir(dir_path): #création du repertoire et confirmation du repertoire créé
+    os.makedirs(dir_path, exist_ok= True)
+    print(f'created {dir_path} directory')
+
+create_dir(logs_dir) #appelle la fonction create_dir avec la variable logs_dir comme argument, en essayant de créer un répertoire de journaux s'il n'existe pas déjà.
+
+# Initialize logging
+#messagz de journalisation
+logging.basicConfig(filename = os.path.join(logs_dir,general_log), level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+# logging the filename
+logging.info(f'Filename: {filename}') #enregistre un message d'information dans le fichier journal.
+
+
+#modifier les paramètres pour activer l'accélération matérielle FFmpeg (si possible)
+def change_settings(settings):
+    try:
+        # Your existing settings change code...
+        print("Hardware acceleration is set to: ", settings["FFMPEG_HWACCEL"])
+    #Cet argument setting est un dictionnaire contenant les paramètres à modifier.
+
+    except Exception as e:
+        print("An error occurred when trying to use hardware acceleration: ", e)
+        print("Falling back to running FFmpeg without hardware acceleration.") #désactiver l'accélération matérielle en raison de l'erreu
+
+        # Modify settings to not use hardware acceleration
+        settings["FFMPEG_HWACCEL"] = None #desactive
+        settings["FFMPEG_VIDEO_CODEC"] = "h264" #modifie le paramètre pour s'assurer qu'un codec vidéo compatible est utilisé, tel que h264.
+
+        # Your existing settings change code...
+        print("Hardware acceleration is set to: ", settings["FFMPEG_HWACCEL"])
+
+# Call the function with your settings
+change_settings({
+    "FFMPEG_HWACCEL": "auto", #active/desactive l'accélération matérielle
+    "FFMPEG_VIDEOPRESET": "fast", #préréglage à utiliser pour l'encodage des vidéos. La valeur "fast" indique à change_settings de privilégier la vitesse à la qualité lors de l'encodage. 
+    "FFMPEG_VIDEO_CODEC": "h264" #pour l'encodage vidéo
+})
+
+
 

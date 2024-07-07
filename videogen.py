@@ -166,3 +166,20 @@ change_settings({
 
 
 
+# Step 1: Search for interesting topics
+
+# permet de rechercher un sujet sur Internet en utilisant l'API Google Custom Search.
+# Elle renvoie une liste d'éléments de recherche trouvés ou une liste vide en cas d'erreur.
+
+def search_topic(query, api_key, search_engine_id):
+    try:
+        url = f"https://www.googleapis.com/customsearch/v1?key={api_key}&cx={search_engine_id}&q={query}"
+        res = requests.get(url)
+        data = json.loads(res.text)
+        return data.get('items', [])
+    except Exception as e:
+        logging.error(f'Error in search_topic: {str(e)}')
+        return []
+
+width, height = (1920, 1080)
+

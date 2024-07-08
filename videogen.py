@@ -183,3 +183,91 @@ def search_topic(query, api_key, search_engine_id):
 
 width, height = (1920, 1080)
 
+
+# Step 2: Gather media
+
+# permet de collecter des images sur Internet en utilisant un robot d'exploration d'images Google et de les enregistrer dans un répertoire spécifié.
+def gather_media(query):
+    try:
+        create_dir(image_dir)
+        google_Crawler = GoogleImageCrawler(storage ={'root_dir': image_dir})
+        print(filename)
+        google_Crawler.crawl(keyword=query, min_size=(width, height), max_size=None, max_num=200)
+        images = os.listdir(image_dir)
+        return [os.path.join(image_dir, image) for image in images]
+    except Exception as e:
+        logging.error(f'Error in gather_media: {str(e)}')
+        return []
+
+device = torch.device('cuda:0') if torch.cuda.is_available() else torch.device('cpu')
+#configure un périphérique pour les calculs. Elle utilise la librairie PyTorch et tente d'utiliser un GPU (carte graphique) si disponible (cuda:0), sinon elle utilise le CPU.
+
+device_id = device.index #récupère l'index du périphérique stocké dans la variable device
+
+# Define a function to generate text using the model
+def generate_text(description):
+
+    prefix ="A well-crafted and beautifully written script for a video generation program, with a focus on balance and harmony."
+
+    # set_seed(seed)
+    seed = 1
+
+    model_name = "gpt2"
+    
+    model = AutoModelForCausalLM.from_pretrained(model_name)
+    tokenizer = GPT2Tokenizer.from_pretrained(model_name)
+    #Le tokenizer permet de convertir le texte dans un format que le modèle peut comprendre.
+    try:
+        generator = pipeline('text-generation',
+                             max_new_tokens=1000,
+                             model=model,
+                             tokenizer=tokenizer,
+                             prefix = prefix, #invite de départ
+                             device=device_id, #GPU
+                             temperature=1,
+                             top_k=50,
+                             top_p=1,
+                             repetition_penalty=1.2,
+                             length_penalty=0.5,
+                             do_sample=True,
+                             num_beams=4,
+                             no_repeat_ngram_size=3,
+                             num_return_sequences=1,
+                             )
+
+        # Generate text
+        additional_sentences_ = (generator(description)[0]['generated_text'])
+        additional_sentences = additional_sentences_
+
+        # Delete the model to free GPU memory / vidage du cache pour libérer la memoire
+        del generator
+        del model
+        torch.cuda.empty_cache()
+
+        return additional_sentences
+    except Exception as e:
+        print(e)
+        logging.error(f'error in generator pipeline :{str(e)}')
+    
+    prompt = description
+    # Open the file in append mode and write the log
+    #journalisation du processus de génération de texte, en enregistrant des informations clés dans un fichier
+    
+    with open(llm_log, "a") as f:  #le code va écrire de nouvelles informations à la fin du fichier existant, sans effacer son contenu précédent.
+        # Write the timestamp
+        timestamp = datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        f.write(f"Timestamp: {timestamp}\n")
+
+        # Write the seed value
+        f.write(f"Seed value: {seed}\n") # configuration du modèle de langage utilisé
+
+        # Write the model parameters
+        f.write(f"Model parameters: {model.config}\n")
+
+        # Write the input prompt
+        f.write(f"Input prompt: {prompt}\n") #generation
+
+        # Generate the text and write it to the log
+        f.write(f"Generated text:\n{additional_sentences}\n\n")
+
+

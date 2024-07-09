@@ -271,3 +271,29 @@ def generate_text(description):
         f.write(f"Generated text:\n{additional_sentences}\n\n")
 
 
+
+# Step 3: Create audio
+def create_audio(description):
+    
+    try:
+
+        create_dir(audio_dir)
+        # Use a pre-trained language model to generate additional sentences based on the initial description
+        
+        additional_sentences = generate_text(description)
+
+        print(f"Generated audio for: {additional_sentences}")
+        
+
+        # Concatenate the original description with the additional sentences
+        # text = " ".join([description] + [additional_sentences])
+        text = additional_sentences
+        # Generate audio file using gTTS
+        tts = gTTS(text=text, lang='en')
+        tts.save(os.path.join(audio_dir, filename + '.mp3'))
+        return additional_sentences
+    except Exception as e:
+        logging.error(f'Error in create_audio: {str(e)}')
+        return description
+
+

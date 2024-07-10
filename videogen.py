@@ -297,3 +297,38 @@ def create_audio(description):
         return description
 
 
+# Step 4: Create video
+def create_video(images, audio_file):
+    try:
+        create_dir(video_dir)
+        with audioread.audio_open(audio_file) as f:
+            audio_duration = int(f.duration)
+        image_duration = 3
+        print('Total Duration: {} seconds'.format(audio_duration))
+
+        num_loops = int(audio_duration / image_duration)
+        print('number of loops:{}'.format(num_loops))
+
+        width, height = (1920, 1080)
+
+        clips = []
+        i = 0
+        while True:
+            print("in while")
+            for image in images:
+                try:
+                    clip = ImageClip(image).resize(width=width, height=height).crop(x1=0, y1=0, x2=width, y2=height).set_duration(image_duration)
+                    clips.append(clip)
+                    i = i + 1
+                except Exception as e:
+                    print(f"Error opening image: {image}. Error message: {str(e)}")
+            if i >= num_loops:
+                print("in if")
+                break
+        print("after while")
+        concat_clip = concatenate_videoclips(clips, method="compose")
+        audio = AudioFileClip(audio_file)
+        video = concat_clip.set_audio(audio)
+        video.write_videofile(os.path.join(video_dir, filename + '.mp4'), fps=24)
+    except Exception as e:
+        logging.error(f'Error in create_video: {str(e)}')

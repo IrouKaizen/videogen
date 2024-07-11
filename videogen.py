@@ -332,3 +332,56 @@ def create_video(images, audio_file):
         video.write_videofile(os.path.join(video_dir, filename + '.mp4'), fps=24)
     except Exception as e:
         logging.error(f'Error in create_video: {str(e)}')
+
+
+def generate_subtitle(audio_file):
+    try:
+        create_dir(subtitle_dir)
+        # Load the transcription model and transcribe the audio file
+        try:
+            model = whisper.load_model("base", device="cuda")
+            result = model.transcribe(audio_file)
+        except Exception as e:
+            print(e)
+            model = whisper.load_model("base", device="cpu")
+            result = model.transcribe(audio_file)
+
+        # Extract the transcribed text and segments from the result
+        text = result["text"]
+        segments = result["segments"]
+
+        # Generate subtitle files
+        subtitles = pysrt.SubRipFile()
+        for i, seg in enumerate(segments):
+            start_time = int(seg["start"] * 1000)  # Convert start time to milliseconds
+            end_time = int(seg["end"] * 1000)  # Convert end time to milliseconds
+            subtitle = pysrt.SubRipItem(index=i, start=pysrt.SubRipTime(milliseconds=start_time),
+                                        end=pysrt.SubRipTime(milliseconds=end_time), text=seg["text"])
+            subtitles.append(subtitle)
+
+        # Save the subtitle file
+        subtitles.save(os.path.join(subtitle_dir, filename + '.srt'))
+    except Exception as e:
+        logging.error(f'Error in generate_subtitle: {str(e)}')
+
+def add_subtitles(video_file):
+    try:
+        create_dir(video_dir)
+        # Load the subtitles from the subtitle file
+        subs = pysrt.open(os.path.join(subtitle_dir, filename + ".srt"))
+
+        # Check if there are subtitles available
+        if subs:
+            # Add the subtitles to the video file
+            video = VideoFileClip(video_file)
+            generator = lambda text: TextClip(text, font='Arial-Bold',
+                                            fontsize=32,
+                                            color='white',
+                                            bg_color='aqua')
+            sub = SubtitlesClip(os.path.join(subtitle_dir, filename + ".srt"), generator)
+            video = CompositeVideoClip([video, sub.set_pos(('center', 'bottom'))])
+            video.write_videofile(os.path.join(video_dir, filename + 'with_subs.mp4'))
+        else:
+            print("No subtitles found")
+    except Exception as e:
+        logging.error(f'Error in add_subtitles: {str(e)}')

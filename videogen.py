@@ -385,3 +385,38 @@ def add_subtitles(video_file):
             print("No subtitles found")
     except Exception as e:
         logging.error(f'Error in add_subtitles: {str(e)}')
+
+
+# Define main function
+# 'ensemble du processus de création d'une vidéo.
+
+def main():
+    try:
+        # Step 1: Search for interesting topics
+        search_results = search_topic(query, google_api_key, search_engine_id)
+        if search_results:
+            title = search_results[0]['title']
+            description = search_results[0]['snippet']
+            print("\nDescription\n" + description + "\n")
+
+            url = search_results[0]['link']
+
+            # Step 2: Gather media
+            media_links = gather_media(query)
+            print(len(media_links))
+
+            # Step 3: Create audio
+            create_audio(description)
+
+            generate_subtitle(os.path.join(audio_dir, filename + '.mp3'))
+
+            # Step 4: Create video
+            create_video(media_links, os.path.join(audio_dir, filename + '.mp3'))
+
+            # Step 5: Add subtitles
+            add_subtitles(os.path.join(video_dir, filename + '.mp4'))
+    except Exception as e:
+        logging.error(f'Error in main: {str(e)}')
+
+if __name__ == '__main__':
+    main()

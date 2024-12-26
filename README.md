@@ -1,4 +1,4 @@
-  Ce code n'est pas de moi. Je l'exploite enfin de créer un autre programme plus complexe.
+  Ce code n'est pas de moi. Je l'exploite enfin de corriger les bugs et créer un autre programme plus complexe.
 
 Certainly, here's a sample README file for your code to be presented on a GitHub repository:
 
